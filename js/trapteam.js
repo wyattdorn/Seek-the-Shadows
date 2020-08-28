@@ -8,6 +8,8 @@ let alienXPos, alienYPos;
 
 let playerOnePosition, playerTwoPosition, targetPositions;
 
+let obstacles;
+
 let totalMoves, totalCaptures;
 
 //Variables for the canvas and canvas context used in game
@@ -20,6 +22,7 @@ function init(){
 
   alienXPos, alienYPos = 200;
   targetPositions = [];
+  obstacles = [];
 
   totalMoves = totalCaptures = 0;
 
@@ -48,14 +51,15 @@ function init(){
 function beginGame(){
   console.log("BEGUN!");
 
-  playerOnePosition = [3,3];
-  playerTwoPosition = [17, 17];
+  playerOnePosition = [5,3];
+  playerTwoPosition = [5, 5];
 
   targetPositions[0] = [9,9];
   targetPositions[1] = [8,3];
   targetPositions[2] = [19,19];
 
-
+  generateObstacle();
+  generateObstacle();
 
 }//end beginGame()
 
@@ -78,13 +82,77 @@ function drawGUI(){
   ctx.fillStyle = "#5a0061";
   ctx.fillText("Arrow keys.", 670, 830);
   ctx.restore();
-  
+
 }//end drawGUI()
+
+///////////////////////////////////////////////////////////////////////////////\
+// Checks if a given location is already occupied by a player, terget, or obstacle
+///////////////////////////////////////////////////////////////////////////////\
+function isOccupied(xPos, yPos){
+
+  //Check the players
+  if(playerOnePosition[0] === xPos && playerOnePosition[1] === yPos){
+    return true;
+  }
+  if(playerTwoPosition[0] === xPos && playerTwoPosition[1] === yPos){
+    return true;
+  }
+
+  //Check targets
+  for(let x = 0; x < targetPositions.length; x++){
+    if(targetPositions[x][0] === xPos && targetPositions[x][1] === yPos){
+      console.log("target at: " + xPos + " " + yPos);
+      return true;
+    }
+  }
+
+  //Check obstacles
+  for(let x = 0; x < obstacles.length; x++){
+    if(obstacles[x][1] === xPos && obstacles[x][2] === yPos){
+      return true;
+    }
+  }
+
+  //If there are no conflicts, return false
+  return false;
+
+}//end isOccupied()
+
+
+///////////////////////////////////////////////////////////////////////////////\
+// Draws all obstacles to screen
+///////////////////////////////////////////////////////////////////////////////\
+function drawObstacles(){
+  ctx.save();
+
+  ctx.fillStyle = "#992727";
+  for(let x = 0; x < obstacles.length; x++){
+    ctx.fillRect(getGridLocation(obstacles[x][1], obstacles[x][2])[0] - 18, getGridLocation(obstacles[x][1], obstacles[x][2])[1] - 18, 36, 36);
+  }
+
+  ctx.restore();
+}//end drawObstacles()
+
+///////////////////////////////////////////////////////////////////////////////\
+// Generates a new obstacle at a random location
+///////////////////////////////////////////////////////////////////////////////\
+function generateObstacle(){
+  this.result = [];
+  do{
+    this.result[0] = Math.floor(Math.random()*19)+1;
+    this.result[1] = Math.floor(Math.random()*19)+1;
+    console.log("---");
+  }while(isOccupied(this.result[0], this.result[1]) || (this.result[0] % 2 === 0 && this.result[1] % 2 === 0));
+
+  console.log(this.result);
+
+  obstacles.push([0, this.result[0], this.result[1]]);
+}//end generateObstacle()
 
 ///////////////////////////////////////////////////////////////////////////////\
 // Generates a new enemy at a random location
 ///////////////////////////////////////////////////////////////////////////////\
-function generateNewEnemy(){
+function generateTarget(){
   this.result = [];
   do{
     result[0] = Math.floor(Math.random()*19)+1;
@@ -93,7 +161,7 @@ function generateNewEnemy(){
   }while(result[0] % 2 === 0 && result[1] % 2 === 0);
   console.log(result);
   targetPositions.push(this.result);
-}//end generateNewEnemy()
+}//end generateTarget()
 
 ///////////////////////////////////////////////////////////////////////////////\
 // Check to see if either player has captured a target
@@ -102,16 +170,16 @@ function checkForCaptures(){
 
   for(let x = 0; x < targetPositions.length; x++){
     if(playerOnePosition[0] === targetPositions[x][0] && playerOnePosition[1] === targetPositions[x][1]){
-      console.log("Enemy " + (x+1) + " captured!");
+      console.log("Target " + (x+1) + " captured!");
       totalCaptures++;
       targetPositions.splice(x,1);
-      generateNewEnemy();
+      generateTarget();
     }
     else if(playerTwoPosition[0] === targetPositions[x][0] && playerTwoPosition[1] === targetPositions[x][1]){
-      console.log("Enemy " + (x+1) + " captured!");
+      console.log("Target " + (x+1) + " captured!");
       totalCaptures++;
       targetPositions.splice(x,1);
-      generateNewEnemy();
+      generateTarget();
     }
   }
 
@@ -128,9 +196,12 @@ function refresh(){
 
   drawMaze();
 
+  drawObstacles();
+
   drawTargets();
 
   drawPlayers();
+
 
   drawGUI();
 
@@ -157,29 +228,50 @@ function isValidInput(player, direction){
 
   //Since there are four directions of movement, we will have four basic conditions
   // For each direction we check the the player is not of the edge of the map
-  // and that there are no blocks in their way.
+  // and that there are no blocks/obstacles in their way.
   switch (direction) {
     case 'north':
       if(playerPositions[player][1] === 1 || playerPositions[player][0] % 2 === 0){
         return false;
+      }
+      for(let x = 0; x < obstacles.length; x++){
+        if(playerPositions[player][0] == obstacles[x][1] && playerPositions[player][1]-1 == obstacles[x][2]){
+          return false;
+        }
       }
       break;
     case 'south':
       if(playerPositions[player][1] === 19 || playerPositions[player][0] % 2 === 0){
         return false;
       }
+      for(let x = 0; x < obstacles.length; x++){
+        if(playerPositions[player][0] == obstacles[x][1] && playerPositions[player][1]+1 == obstacles[x][2]){
+          return false;
+        }
+      }
       break;
     case 'east':
       if(playerPositions[player][0] === 19 || playerPositions[player][1] % 2 === 0){
         return false;
+      }
+      for(let x = 0; x < obstacles.length; x++){
+        if(playerPositions[player][0]+1 == obstacles[x][1] && playerPositions[player][1] == obstacles[x][2]){
+          return false;
+        }
       }
       break;
     case 'west':
       if(playerPositions[player][0] === 1 || playerPositions[player][1] % 2 === 0){
         return false;
       }
+      for(let x = 0; x < obstacles.length; x++){
+        if(playerPositions[player][0]-1 == obstacles[x][1] && playerPositions[player][1] == obstacles[x][2]){
+          return false;
+        }
+      }
       break;
   }
+
 
   return true;
 

@@ -6,9 +6,11 @@ const canvasHeight = 840;
 
 let alienXPos, alienYPos;
 
-let playerOnePosition, playerTwoPosition, targetPositions;
+let playerPositions, targetPositions;
 
 let obstacles;
+
+let clickedToken, clickedObstacle;
 
 let totalMoves, totalCaptures;
 
@@ -20,9 +22,12 @@ function init(){
   //Add event listener for key presses
   window.addEventListener('keydown',this.keyboardEvent,false);
 
-  alienXPos, alienYPos = 200;
+  //alienXPos, alienYPos = 200;
   targetPositions = [];
   obstacles = [];
+  playerPositions = [];
+
+  clickedToken = clickedObstacle = -1;
 
   totalMoves = totalCaptures = 0;
 
@@ -32,6 +37,11 @@ function init(){
   canvas.style.position = "absolute";
   canvas.height = canvasHeight;
   canvas.width = canvasWidth;
+
+  canvas.onmousedown = logMouseDown;
+  canvas.onmouseup = logmouseup;
+  canvas.onmousemove = movetoken;
+
 
   if (canvas.getContext) {
     ctx = canvas.getContext('2d');
@@ -45,27 +55,24 @@ function init(){
   beginGame();
   refresh();
 
-  testCalc();
-
 } //end init()
 
 
 function beginGame(){
   console.log("BEGUN!");
 
-  playerOnePosition = [5,3];
-  playerTwoPosition = [11, 11];
+  playerPositions[0] = [1,1];
+  playerPositions[1] = [1, 19];
 
+  /*
   targetPositions[0] = [9,9];
   targetPositions[1] = [8,3];
   targetPositions[2] = [19,19];
+  */
 
-  generateObstacles(5);
-
-  //testCalc();
+  generateObstacles(25);
 
 }//end beginGame()
-
 
 function getMovesBetweenPoints(pointOne, pointTwo){
 
@@ -75,107 +82,254 @@ function getMovesBetweenPoints(pointOne, pointTwo){
 
 }//end getMovesBetweenPoints()
 
-function testCalc(){
-  //declare local variables
-  this.output = [];
-  this.colors = ["red", "green"];
-  //Temporary use grid for itterating through the main loop
-  this.tempGrid = [];
-  this.neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
-  this.playerGrids = [[], []];
-  this.playerLocations = [playerOnePosition, playerTwoPosition];
 
-  this.continueLoop = true;
-  this.itterator;
+  function movetoken(e){
 
-  //Loop through twice, once for each player-controlled unit
-  for(let g = 0; g < 2; g++){
+    var mousePosition = [];
+    var mouseXPos, mouseYPos;
 
-    this.itterator = -1;
+    //get mouse location at time of click
+    e = event || window.event;
+    mouseXPos = e.mouseXPos;
+    mouseYPos = e.mouseYPos;
 
-    //Initialize the values of the grid
-    for(let x = 1; x < 21; x++){
-      for(let y = 1; y < 21; y++){
-        if((x % 2) != 0 && (y % 2) != 0){
-          this.output.push(null);
-        }
-        else{
-          this.output.push(-1);
+    if (mouseXPos === undefined) {
+            mousePosition.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+    }
+    if (mouseYPos === undefined) {
+          mousePosition.y = e.clientY;// + document.body.scrollLeft + document.documentElement.scrollLeft;
+    }
+
+    this.gridLocation = [Math.floor(mousePosition.x/40) , Math.floor(mousePosition.y/40)];
+
+    if(clickedToken != -1){
+      if(!isOccupied(this.gridLocation[0], this.gridLocation[1]) && !(this.gridLocation[0] % 2 === 0 && this.gridLocation[1] % 2 === 0)){
+        updatePlayerLocation(clickedToken, this.gridLocation[0], this.gridLocation[1]);
+        refresh();
+      }
+    }
+
+    if(clickedObstacle != -1){
+      if(!isOccupied(this.gridLocation[0], this.gridLocation[1]) && !(this.gridLocation[0] % 2 === 0 && this.gridLocation[1] % 2 === 0)){
+        updateObstacleLocation(clickedObstacle, this.gridLocation[0], this.gridLocation[1]);
+        refresh();
+      }
+    }
+  }//end movetoken()
+
+  function logmouseup(e){
+    clickedToken = clickedObstacle = -1;
+    console.log("UP!");
+  }//end logmouseup()
+
+  function logMouseDown(e){
+    console.log("***Mouse clicked***");
+    var clickPosition = [];
+
+    //get mouse location at time of click
+    e = event || window.event;
+    mouseXPos = e.mouseXPos;
+    mouseYPos = e.mouseYPos;
+
+    if (mouseXPos === undefined) {
+            clickPosition.x = e.clientX + document.body.scrollLeft + document.documentElement.scrollLeft;
+      }
+    if (mouseYPos === undefined) {
+          clickPosition.y = e.clientY;// + document.body.scrollLeft + document.documentElement.scrollLeft;
+      }
+
+    //Get the grid location from the click location
+    this.gridLocation = [Math.floor(clickPosition.x/40) , Math.floor(clickPosition.y/40)];
+
+    if(e.button === 0){
+
+      //Move player token
+      for(let x = 0; x < 2; x++){
+        if(playerPositions[x][0] == this.gridLocation[0] && playerPositions[x][1] == this.gridLocation[1]){
+          console.log("Clicked token #" + x);
+          clickedToken = x;
         }
       }
-      this.playerGrids[g].push(output);
-      this.output = [];
+
+      //Move obstacle
+      for(let x = 0; x < obstacles.length; x++){
+        if(obstacles[x][1] == this.gridLocation[0] && obstacles[x][2] == this.gridLocation[1]){
+          console.log("Clicked obstacle #" + x);
+          clickedObstacle = x;
+        }
+      }
+    }
+    else if(e.button === 2){
+      console.log("right");
+      if(!isOccupied(this.gridLocation[0], this.gridLocation[1])){
+        obstacles.push([0, this.gridLocation[0], this.gridLocation[1]]);
+        refresh();
+      }
     }
 
-    this.playerGrids[g][this.playerLocations[g][0]][this.playerLocations[g][1]] = 0;
+  }//end logMouseDown()
 
-    for(let x = 0; x < obstacles.length; x++){
-      this.playerGrids[g][obstacles[x][1]][obstacles[x][2]] = null;
+  function dragPlayerPiece(xPos, yPos){
+    while(clickedToken != -1){
+      updatePlayerLocation(clickedToken, xPos, yPos);
     }
+  }//end dragPlayerPiece()
 
-    //Run through the grid, getting the values for each player unit
-    do{
-      // We assuem the loop will stop at each itteration, we will only continue if
-      // a valid, unmapped square is found.
-      this.continueLoop = false;
-      this.tempGrid = this.playerGrids[g];
-      for(let x = 1; x < 20; x++){
-        for(let y = 1; y < 20; y++){
-          //check if the square was written to the last round
-          if(this.playerGrids[g][x][y] == (this.itterator + 1)){
-            //Check all the neighbors of the selected square
-            for(let n = 0; n < 4; n++){
-              //Make sure teh square in on the map
-              if(x + this.neighbors[n][0] >= 0 && y + this.neighbors[n][1] >=0 && x + this.neighbors[n][0] <= 19 && y + this.neighbors[n][1] <= 19){
-                //Make sure the location is a valid target (not null)
-                if(this.playerGrids[g][x + this.neighbors[n][0]][y + this.neighbors[n][1]] === -1){
-                  this.tempGrid[x + this.neighbors[n][0]][y + this.neighbors[n][1]] = this.itterator + 2;
-                  this.continueLoop = true;
+  function updatePlayerLocation(player, xPos, yPos){
+    if(xPos > 0 && xPos < 20 && yPos > 0 && yPos < 20){
+      playerPositions[player] = [xPos, yPos];
+    }
+  }//end updatePlayerLocation()
+
+
+  function updateObstacleLocation(obstacle, xPos, yPos){
+    if(xPos > 0 && xPos < 20 && yPos > 0 && yPos < 20){
+      obstacles[obstacle] = [obstacles[obstacle][0], xPos, yPos];
+    }
+  }//end updateObstacleLocation()
+
+
+  ///////////////////////////////////////////////////////////////////////////////\
+  // Creates a 2D array to determine which squares are safest for the AI
+  ///////////////////////////////////////////////////////////////////////////////\
+  function testCalc(){
+    //declare local variables
+    this.output = [];
+    //Temporary use grid for itterating through the main loop
+    this.tempGrid = [];
+    this.neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    this.playerGrids = [[], []];
+    //this.playerLocations = [playerPositions[0], playerPositions[1]];
+
+    this.errorFlag = false;
+    this.continueLoop = true;
+    this.itterator;
+
+    //Loop through twice, once for each player-controlled unit
+    for(let g = 0; g < 2; g++){
+
+      this.itterator = -1;
+
+      //Initialize the values of the grid
+      for(let x = 1; x < 21; x++){
+        for(let y = 1; y < 21; y++){
+          if((x % 2) != 0 && (y % 2) != 0){
+            this.output.push(null);
+          }
+          else{
+            this.output.push(-1);
+          }
+        }
+        this.playerGrids[g].push(output);
+        this.output = [];
+      }
+
+      this.playerGrids[g][playerPositions[g][0]][playerPositions[g][1]] = 0;
+
+      for(let x = 0; x < obstacles.length; x++){
+        this.playerGrids[g][obstacles[x][1]][obstacles[x][2]] = null;
+      }
+
+      //Run through the grid, getting the values for each player unit
+      do{
+        // We assuem the loop will stop at each itteration, we will only continue if
+        // a valid, unmapped square is found.
+        this.continueLoop = false;
+        this.tempGrid = this.playerGrids[g];
+        for(let x = 1; x < 20; x++){
+          for(let y = 1; y < 20; y++){
+            //check if the square was written to the last round
+            if(this.playerGrids[g][x][y] == (this.itterator + 1)){
+              //Check all the neighbors of the selected square
+              for(let n = 0; n < 4; n++){
+                //Make sure teh square in on the map
+                if(x + this.neighbors[n][0] >= 0 && y + this.neighbors[n][1] >=0 && x + this.neighbors[n][0] <= 19 && y + this.neighbors[n][1] <= 19){
+                  //Make sure the location is a valid target (not null)
+                  if(this.playerGrids[g][x + this.neighbors[n][0]][y + this.neighbors[n][1]] === -1){
+                    this.tempGrid[x + this.neighbors[n][0]][y + this.neighbors[n][1]] = this.itterator + 2;
+                    this.continueLoop = true;
+                  }
                 }
               }
             }
           }
         }
-      }
-      this.playerGrids[g] = this.tempGrid;
-      this.tempGrid = [];
-      this.itterator++;
-    }while(continueLoop);
+        this.playerGrids[g] = this.tempGrid;
+        this.tempGrid = [];
+        this.itterator++;
+      }while(continueLoop);
 
-    ctx.fillStyle = this.colors[g];
+    }
 
-    //print the grid
+    this.max = 0;
+    this.min = 500;
+
     for(let x = 1; x < 20; x++){
+      this.output[x] = [];
       for(let y = 1; y < 20; y++){
-        if(this.playerGrids[g][x][y] != null){
-          //ctx.fillText(this.playerGrids[g][x][y], getGridLocation(x,y)[0]-10, getGridLocation(x,y)[1]+10);
+
+          //Set the value of each square to the product of the distance from the two player tokens
+          this.output[x][y] = (this.playerGrids[0][x][y] * this.playerGrids[1][x][y]);
+
+          // If the two player tokens are segregated from eachother by the
+          // obstacles, we will skip the drawing phase of this function
+          this.errorFlag = this.output[x][y] < 0 ? true: false;
+
+
+          //Check value against current minimum and maximum values
+          this.min = ((this.output[x][y] != 0) && (this.output[x][y] < this.min)) ? this.output[x][y] : this.min;
+          this.max = ((this.output[x][y] != 0) && (this.output[x][y] > this.max)) ? this.output[x][y] : this.max;
+      }
+    }
+
+
+
+
+    if(!this.errorFlag){
+
+      this.step = Math.floor((this.max - this.min) / 10);
+      ctx.fillStyle = "blue";
+
+      for(let x = 1; x < 20; x++){
+        for(let y = 1; y < 20; y++){
+
+          if(this.output[x][y] != 0){
+            this.rank = Math.floor(this.output[x][y]/this.step);
+
+
+            if(this.rank < 0){
+              console.log("ERROR");
+            }
+          }
+
+          if(this.output[x][y] == 1){//Inaccessable squares are colored black
+            ctx.fillStyle = "black";
+          }
+          else if(this.rank > 5){ //area of least danger
+            ctx.fillStyle = ("#" + (271 - ((this.rank - 5) * 51)).toString(16) + "ff50").toString(16);
+          }
+          else if(this.rank < 5){ //area of most danger
+            ctx.fillStyle = ("#ff" + ((16 + 51 * this.rank).toString(16) + "50")).toString(16);
+          }
+          else{
+            ctx.fillStyle = "#ffff00";
+          }
+
+          if(this.output[x][y] != 0){
+            ctx.fillRect(getGridLocation(x,y)[0]-9, getGridLocation(x,y)[1]-9, 18, 18);
+          }
         }
       }
     }
-  }
 
-
-  for(let x = 1; x < 20; x++){
-    this.output[x] = [];
-    for(let y = 1; y < 20; y++){
-        this.output[x][y] = (this.playerGrids[0][x][y] * this.playerGrids[1][x][y]);
-        if(this.output[x][y] >= 100){
-          ctx.fillText("O", getGridLocation(x,y)[0]-10, getGridLocation(x,y)[1]+10);
-        }
-    }
-  }
-
-
-}//end calculateThreats()
+  }//end testCalc()
 
 
 ///////////////////////////////////////////////////////////////////////////////\
-// Creates a 2D array to determine which squares are safest for the AI
+// To be implemented
 ///////////////////////////////////////////////////////////////////////////////\
 function calculateThreats(){
   this.grid = [];
-
-  this.playerPositions = [playerOnePosition, playerTwoPosition];
 
   for(let i = 0; i < 2; i++){
     for(let x = 0; x < 19; x++){
@@ -214,11 +368,16 @@ function drawGUI(){
 ///////////////////////////////////////////////////////////////////////////////\
 function isOccupied(xPos, yPos){
 
-  //Check the players
-  if(playerOnePosition[0] === xPos && playerOnePosition[1] === yPos){
+  //Check if it's a black block
+  if(xPos % 2 === 0 && yPos % 2 === 0){
     return true;
   }
-  if(playerTwoPosition[0] === xPos && playerTwoPosition[1] === yPos){
+
+  //Check the players
+  if(playerPositions[0][0] === xPos && playerPositions[0][1] === yPos){
+    return true;
+  }
+  if(playerPositions[1][0] === xPos && playerPositions[1][1] === yPos){
     return true;
   }
 
@@ -249,7 +408,7 @@ function isOccupied(xPos, yPos){
 function drawObstacles(){
   ctx.save();
 
-  ctx.fillStyle = "#992727";
+  ctx.fillStyle = "#272727";
   for(let x = 0; x < obstacles.length; x++){
     ctx.fillRect(getGridLocation(obstacles[x][1], obstacles[x][2])[0] - 18, getGridLocation(obstacles[x][1], obstacles[x][2])[1] - 18, 36, 36);
   }
@@ -271,6 +430,9 @@ function generateObstacles(numObstacles){
 
     obstacles.push([0, this.result[0], this.result[1]]);
   }
+
+  obstacles.push([0, 18, 1]);
+  obstacles.push([0, 19, 2]);
 }//end generateObstacles()
 
 ///////////////////////////////////////////////////////////////////////////////\
@@ -293,13 +455,13 @@ function generateTarget(){
 function checkForCaptures(){
 
   for(let x = 0; x < targetPositions.length; x++){
-    if(playerOnePosition[0] === targetPositions[x][0] && playerOnePosition[1] === targetPositions[x][1]){
+    if(playerPositions[0][0] === targetPositions[x][0] && playerPositions[0][1] === targetPositions[x][1]){
       console.log("Target " + (x+1) + " captured!");
       totalCaptures++;
       targetPositions.splice(x,1);
       generateTarget();
     }
-    else if(playerTwoPosition[0] === targetPositions[x][0] && playerTwoPosition[1] === targetPositions[x][1]){
+    else if(playerPositions[1][0] === targetPositions[x][0] && playerPositions[1][1] === targetPositions[x][1]){
       console.log("Target " + (x+1) + " captured!");
       totalCaptures++;
       targetPositions.splice(x,1);
@@ -329,6 +491,8 @@ function refresh(){
 
   drawGUI();
 
+  testCalc();
+
 
 }//end refresh()
 
@@ -348,7 +512,7 @@ function getGridLocation(xGrid, yGrid){
 ///////////////////////////////////////////////////////////////////////////////\
 function isValidInput(player, direction){
 
-  this.playerPositions = [playerOnePosition, playerTwoPosition];
+  this.playerPositions = [playerPositions[0], playerPositions[1]];
 
   //Since there are four directions of movement, we will have four basic conditions
   // For each direction we check the the player is not of the edge of the map
@@ -396,18 +560,15 @@ function isValidInput(player, direction){
       break;
   }
 
-
   return true;
 
 }//end isValidInput()
 
 
 ///////////////////////////////////////////////////////////////////////////////\
-//  Moves player one, based on user input
+//  Moves player one square, based on user keyboard input
 ///////////////////////////////////////////////////////////////////////////////\
 function movePlayer(player, direction){
-
-  this.playerPositions = [playerOnePosition, playerTwoPosition];
 
   if(!isValidInput(player, direction)){
     return false;
@@ -415,22 +576,22 @@ function movePlayer(player, direction){
 
   switch (direction) {
     case 'north':
-      this.playerPositions[player][1] -= 1;
+      playerPositions[player][1] -= 1;
       break;
     case 'south':
-      this.playerPositions[player][1] += 1;
+      playerPositions[player][1] += 1;
       break;
     case 'east':
-      this.playerPositions[player][0] += 1;
+      playerPositions[player][0] += 1;
       break;
     case 'west':
-      this.playerPositions[player][0] -= 1;
+      playerPositions[player][0] -= 1;
       break;
   }
 
   return true;
 
-}//end movePlayerOne
+}//end movePlayer()
 
 
 
@@ -440,7 +601,7 @@ function movePlayer(player, direction){
 function drawPlayers(){
   ctx.save();
 
-  this.myLocations = [getGridLocation(playerOnePosition[0], playerOnePosition[1]), getGridLocation(playerTwoPosition[0], playerTwoPosition[1])];
+  this.myLocations = [getGridLocation(playerPositions[0][0], playerPositions[0][1]), getGridLocation(playerPositions[1][0], playerPositions[1][1])];
   this.playerColors = ["#cd5100", "#5a0061"];
 
   for(let x = 0; x < 2; x++){

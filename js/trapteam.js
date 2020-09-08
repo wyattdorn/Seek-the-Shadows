@@ -1,8 +1,17 @@
 //Written by Wyatt Dorn
 
+
 //The width and height of the canvas used in the game
-const canvasWidth = 840;
-const canvasHeight = 840;
+const canvasWidth = 896;
+const canvasHeight = 896;
+
+const squareSize = 16;
+
+const borderSize = 40;
+
+
+const gridWidth = (canvasWidth - 80) / squareSize;
+const gridHeight = (canvasHeight - 80) / squareSize;
 
 let alienXPos, alienYPos;
 
@@ -70,7 +79,7 @@ function beginGame(){
   targetPositions[2] = [19,19];
   */
 
-  generateObstacles(25);
+  generateObstacles(1);
 
 }//end beginGame()
 
@@ -100,7 +109,7 @@ function getMovesBetweenPoints(pointOne, pointTwo){
           mousePosition.y = e.clientY;// + document.body.scrollLeft + document.documentElement.scrollLeft;
     }
 
-    this.gridLocation = [Math.floor(mousePosition.x/40) , Math.floor(mousePosition.y/40)];
+    this.gridLocation = [Math.floor((mousePosition.x - borderSize)/squareSize) + 1 , Math.floor((mousePosition.y - borderSize)/squareSize) + 1];
 
     if(clickedToken != -1){
       if(!isOccupied(this.gridLocation[0], this.gridLocation[1]) && !(this.gridLocation[0] % 2 === 0 && this.gridLocation[1] % 2 === 0)){
@@ -139,7 +148,9 @@ function getMovesBetweenPoints(pointOne, pointTwo){
       }
 
     //Get the grid location from the click location
-    this.gridLocation = [Math.floor(clickPosition.x/40) , Math.floor(clickPosition.y/40)];
+    this.gridLocation = [Math.floor((clickPosition.x - borderSize)/squareSize) + 1 , Math.floor((clickPosition.y - borderSize)/squareSize) + 1];
+
+    console.log(this.gridLocation);
 
     if(e.button === 0){
 
@@ -176,14 +187,14 @@ function getMovesBetweenPoints(pointOne, pointTwo){
   }//end dragPlayerPiece()
 
   function updatePlayerLocation(player, xPos, yPos){
-    if(xPos > 0 && xPos < 20 && yPos > 0 && yPos < 20){
+    if(xPos > 0 && xPos <= gridWidth && yPos > 0 && yPos <= gridHeight){
       playerPositions[player] = [xPos, yPos];
     }
   }//end updatePlayerLocation()
 
 
   function updateObstacleLocation(obstacle, xPos, yPos){
-    if(xPos > 0 && xPos < 20 && yPos > 0 && yPos < 20){
+    if(xPos > 0 && xPos <= gridWidth && yPos > 0 && yPos <= gridHeight){
       obstacles[obstacle] = [obstacles[obstacle][0], xPos, yPos];
     }
   }//end updateObstacleLocation()
@@ -211,8 +222,8 @@ function getMovesBetweenPoints(pointOne, pointTwo){
       this.itterator = -1;
 
       //Initialize the values of the grid
-      for(let x = 1; x < 21; x++){
-        for(let y = 1; y < 21; y++){
+      for(let x = 1; x < gridWidth+2; x++){
+        for(let y = 1; y < gridHeight+2; y++){
           if((x % 2) != 0 && (y % 2) != 0){
             this.output.push(null);
           }
@@ -236,14 +247,14 @@ function getMovesBetweenPoints(pointOne, pointTwo){
         // a valid, unmapped square is found.
         this.continueLoop = false;
         this.tempGrid = this.playerGrids[g];
-        for(let x = 1; x < 20; x++){
-          for(let y = 1; y < 20; y++){
+        for(let x = 1; x < gridWidth+1; x++){
+          for(let y = 1; y < gridHeight+1; y++){
             //check if the square was written to the last round
             if(this.playerGrids[g][x][y] == (this.itterator + 1)){
               //Check all the neighbors of the selected square
               for(let n = 0; n < 4; n++){
-                //Make sure teh square in on the map
-                if(x + this.neighbors[n][0] >= 0 && y + this.neighbors[n][1] >=0 && x + this.neighbors[n][0] <= 19 && y + this.neighbors[n][1] <= 19){
+                //Make sure the square in on the map
+                if(x + this.neighbors[n][0] >= 0 && y + this.neighbors[n][1] >=0 && x + this.neighbors[n][0] <= gridWidth && y + this.neighbors[n][1] <= gridHeight){
                   //Make sure the location is a valid target (not null)
                   if(this.playerGrids[g][x + this.neighbors[n][0]][y + this.neighbors[n][1]] === -1){
                     this.tempGrid[x + this.neighbors[n][0]][y + this.neighbors[n][1]] = this.itterator + 2;
@@ -264,9 +275,9 @@ function getMovesBetweenPoints(pointOne, pointTwo){
     this.max = 0;
     this.min = 500;
 
-    for(let x = 1; x < 20; x++){
+    for(let x = 1; x < gridWidth+1; x++){
       this.output[x] = [];
-      for(let y = 1; y < 20; y++){
+      for(let y = 1; y < gridHeight+1; y++){
 
           //Set the value of each square to the product of the distance from the two player tokens
           this.output[x][y] = (this.playerGrids[0][x][y] * this.playerGrids[1][x][y]);
@@ -290,8 +301,8 @@ function getMovesBetweenPoints(pointOne, pointTwo){
       this.step = Math.floor((this.max - this.min) / 10);
       ctx.fillStyle = "blue";
 
-      for(let x = 1; x < 20; x++){
-        for(let y = 1; y < 20; y++){
+      for(let x = 1; x < gridWidth+1; x++){
+        for(let y = 1; y < gridHeight+1; y++){
 
           if(this.output[x][y] != 0){
             this.rank = Math.floor(this.output[x][y]/this.step);
@@ -350,13 +361,13 @@ function drawGUI(){
   ctx.fillStyle = "#4488ff";
 
   //Top
-  ctx.fillText("Moves: " + totalMoves, 40, 30);
+  ctx.fillText("Moves: " + totalMoves, borderSize, 30);
   ctx.fillText("Captures: " + totalCaptures, 680-(String(totalCaptures).length*12), 30);
 
   //Bottom
   ctx.fillText("Catch me. ", 350, 830);
   ctx.fillStyle = "#cd5100";
-  ctx.fillText("W, A, S, D", 40, 830);
+  ctx.fillText("W, A, S, D", borderSize, 830);
   ctx.fillStyle = "#5a0061";
   ctx.fillText("Arrow keys.", 670, 830);
   ctx.restore();
@@ -410,7 +421,7 @@ function drawObstacles(){
 
   ctx.fillStyle = "#272727";
   for(let x = 0; x < obstacles.length; x++){
-    ctx.fillRect(getGridLocation(obstacles[x][1], obstacles[x][2])[0] - 18, getGridLocation(obstacles[x][1], obstacles[x][2])[1] - 18, 36, 36);
+    ctx.fillRect(getGridLocation(obstacles[x][1], obstacles[x][2])[0] - (squareSize * 0.4), getGridLocation(obstacles[x][1], obstacles[x][2])[1] - (squareSize * 0.4), (squareSize * 0.8), (squareSize * 0.8));
   }
 
   ctx.restore();
@@ -423,16 +434,14 @@ function generateObstacles(numObstacles){
   for(let x = 0; x < numObstacles; x++){
     this.result = [];
     do{
-      this.result[0] = Math.floor(Math.random()*19)+1;
-      this.result[1] = Math.floor(Math.random()*19)+1;
+      this.result[0] = Math.floor(Math.random()*gridWidth)+1;
+      this.result[1] = Math.floor(Math.random()*gridHeight)+1;
       console.log("---");
     }while(isOccupied(this.result[0], this.result[1]) || (this.result[0] % 2 === 0 && this.result[1] % 2 === 0));
 
     obstacles.push([0, this.result[0], this.result[1]]);
   }
 
-  obstacles.push([0, 18, 1]);
-  obstacles.push([0, 19, 2]);
 }//end generateObstacles()
 
 ///////////////////////////////////////////////////////////////////////////////\
@@ -441,8 +450,8 @@ function generateObstacles(numObstacles){
 function generateTarget(){
   this.result = [];
   do{
-    result[0] = Math.floor(Math.random()*19)+1;
-    result[1] = Math.floor(Math.random()*19)+1;
+    result[0] = Math.floor(Math.random()*gridWidth)+1;
+    result[1] = Math.floor(Math.random()*gridHeight)+1;
     console.log("---");
   }while(result[0] % 2 === 0 && result[1] % 2 === 0);
   console.log(result);
@@ -502,7 +511,7 @@ function refresh(){
 ///////////////////////////////////////////////////////////////////////////////\
 function getGridLocation(xGrid, yGrid){
 
-  return([(xGrid*40)+20, (yGrid*40)+20])
+  return([borderSize + (xGrid*squareSize)-(squareSize/2), borderSize + (yGrid*squareSize)-(squareSize/2)])
 
 }//end getGridLocation()
 
@@ -529,7 +538,7 @@ function isValidInput(player, direction){
       }
       break;
     case 'south':
-      if(playerPositions[player][1] === 19 || playerPositions[player][0] % 2 === 0){
+      if(playerPositions[player][1] === gridHeight || playerPositions[player][0] % 2 === 0){
         return false;
       }
       for(let x = 0; x < obstacles.length; x++){
@@ -539,7 +548,7 @@ function isValidInput(player, direction){
       }
       break;
     case 'east':
-      if(playerPositions[player][0] === 19 || playerPositions[player][1] % 2 === 0){
+      if(playerPositions[player][0] === gridWidth || playerPositions[player][1] % 2 === 0){
         return false;
       }
       for(let x = 0; x < obstacles.length; x++){
@@ -608,8 +617,8 @@ function drawPlayers(){
     ctx.strokeStyle = this.playerColors[x];
     ctx.fillStyle = "black";
     ctx.beginPath();
-    ctx.arc(this.myLocations[x][0], this.myLocations[x][1], 10, 0, 2 * Math.PI);
-    ctx.lineWidth = 15;
+    ctx.arc(this.myLocations[x][0], this.myLocations[x][1], 4, 0, 2 * Math.PI);
+    ctx.lineWidth = (squareSize * 0.4);
     ctx.stroke();
     ctx.fill();
   }
@@ -640,15 +649,15 @@ function drawTargets(){
 
 
 ///////////////////////////////////////////////////////////////////////////////\
-//  Draws the grid on screen. CUrrent grid maxes out at 19x19
+//  Draws the grid on screen.
 ///////////////////////////////////////////////////////////////////////////////\
 function drawMaze(){
   ctx.fillStyle = "#bbb";
-  ctx.fillRect(40, 40, 760, 760);
+  ctx.fillRect(borderSize, borderSize, canvasWidth - (2 * borderSize), canvasHeight - (2 * borderSize));
   ctx.fillStyle = "black";
-  for(let x = 2; x < 20; x+=2){
-    for(let y = 2; y < 20; y+=2){
-      ctx.fillRect(x*40, y*40, 40, 40);
+  for(let x = 1; x < ((canvasWidth-80)/squareSize); x+=2){
+    for(let y = 1; y < ((canvasHeight-80)/squareSize); y+=2){
+      ctx.fillRect(borderSize+x*squareSize, borderSize+y*squareSize, squareSize, squareSize);
     }
   }
 }//end drawMaze()

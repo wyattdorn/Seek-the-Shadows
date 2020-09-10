@@ -340,7 +340,7 @@ function addRemovePlayerToken(index){
 
     for(let x = 0; x < this.sortArray.length; x++){
 
-      ctx.fillStyle = ctx.fillStyle = ("#" + (17+Math.floor(255*(x/this.sortArray.length))).toString(16) + "7777").toString(16);
+      ctx.fillStyle = ctx.fillStyle = ("#" + (17+Math.floor(238*(x/this.sortArray.length))).toString(16) +(17+Math.floor(238*(x/this.sortArray.length))).toString(16) +(17+Math.floor(238*(x/this.sortArray.length))).toString(16) + "").toString(16);
       /*
       switch (true) {
         case (x < this.sortArray.length/5):

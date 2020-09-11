@@ -26,6 +26,8 @@ let totalMoves, totalCaptures;
 
 let timer;
 
+let stopGame;
+
 
 
 //Variables for the canvas and canvas context used in game
@@ -46,6 +48,8 @@ function init(){
   totalMoves = totalCaptures = 0;
 
   numEnemyTokens = 0;
+
+  stopGame = false;
 
   canvas = document.getElementById('canvas');
   canvas.style.left = "0px";
@@ -85,6 +89,8 @@ function beginGame(){
   timer = setInterval(myTimer, 1000);
 
 }//end beginGame()
+
+
 
 ///////////////////////////////////////////////////////////////////////////////\
 // Timer function for handling enemy movements
@@ -498,20 +504,16 @@ function generateTarget(){
 ///////////////////////////////////////////////////////////////////////////////\
 function checkForCaptures(){
 
-  for(let x = 0; x < playerPositions.length; x++){
-    if(enemyPositions[0][0] === playerPositions[x][0] && enemyPositions[0][1] === playerPositions[x][1]){
-      console.log("Target " + (x+1) + " captured!");
-      totalCaptures++;
-      playerPositions.splice(x,1);
-      generateTarget();
-    }
-    else if(enemyPositions[1][0] === playerPositions[x][0] && enemyPositions[1][1] === playerPositions[x][1]){
-      console.log("Target " + (x+1) + " captured!");
-      totalCaptures++;
-      playerPositions.splice(x,1);
-      generateTarget();
+  for(let x = 0; x < enemyPositions.length; x++){
+    for(let y = 0; y < playerPositions.length; y++){
+      if(enemyPositions[x][0] === playerPositions[y][0] && enemyPositions[x][1] === playerPositions[y][1]){
+        console.log("ya");
+        return true;
+      }
     }
   }
+
+  return false;
 
 }//end checkForCaptures()
 
@@ -521,39 +523,58 @@ function checkForCaptures(){
 ///////////////////////////////////////////////////////////////////////////////\
 function refresh(){
 
-  ctx.fillStyle = "#202020";
-  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  console.log(stopGame + " is a go!");
 
-  drawMaze();
+  if(stopGame){
+    console.log("game over!");
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "55px Arial";
 
-  drawGUI();
-
-  calculateThreats();
-
-  shineLight();
-
-  drawPlayerTokens();
-
-  drawObstacles();
-
-  drawEnemies();
-
-
-   //FOR TESTING PURPOSES
-  for(let x = 0; x < enemyPositions.length; x++){
-    ctx.fillStyle = "red";
-    ctx.fillText(getClosestTarget(x), enemyPositions[x][0]*16+32,enemyPositions[x][1]*16+27);
+    ctx.fillText("GAME OVER! Score: " + totalMoves, 100, 400 );
   }
-  /*
-  for(let x = 1; x < 52; x++){
-    for(let y = 1; y < 52; y++){
-      ctx.fillStyle = "green";
-      if((enemyGrids[0][x][y])!= null){
-        ctx.fillText((enemyGrids[0][x][y]), x*16+28, y*16+32);
+  else{
+
+    ctx.fillStyle = "#202020";
+    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+    drawMaze();
+
+    drawGUI();
+
+    calculateThreats();
+
+    shineLight();
+
+    drawPlayerTokens();
+
+    drawObstacles();
+
+    for(let x = 0; x < enemyPositions.length; x++){
+      //ctx.fillStyle = "red";
+      //ctx.fillText(getClosestTarget(x), enemyPositions[x][0]*16+32,enemyPositions[x][1]*16+27);
+      moveEnemyTowardsTarget(x);
+    }
+
+    drawEnemies();
+
+
+     //FOR TESTING PURPOSES
+
+
+    stopGame = checkForCaptures();
+    /*
+    for(let x = 1; x < 52; x++){
+      for(let y = 1; y < 52; y++){
+        ctx.fillStyle = "green";
+        if((enemyGrids[0][x][y])!= null){
+          ctx.fillText((enemyGrids[0][x][y]), x*16+28, y*16+32);
+        }
       }
     }
+    */
   }
-  */
+
+
 
 }//end refresh()
 
@@ -568,10 +589,76 @@ function moveEnemyTowardsTarget(enemy){
   this.tempGrid = [];
   this.neighbors = [[1, 0], [-1, 0], [0, 1], [0, -1]];
 
+  this.pathingGrid = [];
+
   this.continueLoop = true;
   this.itterator;
 
-  //apples
+
+  if(enemyPositions[enemy] != null){
+
+    this.itterator = -1;
+
+    //Initialize the values of the grid
+    for(let x = 1; x < gridWidth + 2; x++){
+      for(let y = 1; y < gridHeight + 2; y++){
+        if((x % 2) != 0 && (y % 2) != 0){
+          this.output.push(null);
+        }
+        else{
+          this.output.push(-1);
+        }
+      }
+      this.pathingGrid.push(output);
+      this.output = [];
+    }
+
+    this.pathingGrid[playerPositions[this.closestTarget][0]][playerPositions[this.closestTarget][1]] = 0;
+
+    for(let x = 0; x < obstacles.length; x++){
+      this.pathingGrid[obstacles[x][1]][obstacles[x][2]] = null;
+    }
+
+    //Run through the grid, getting the values for each enemy unit
+    do{
+      // We assuem the loop will stop at each itteration, we will only continue if
+      // a valid, unmapped square is found.
+      this.continueLoop = false;
+      this.tempGrid = this.pathingGrid;
+      for(let x = 1; x < gridWidth+1; x++){
+        for(let y = 1; y < gridHeight+1; y++){
+          //check if the square was written to the last round
+          if(this.pathingGrid[x][y] == (this.itterator + 1)){
+            //Check all the neighbors of the selected square
+            for(let n = 0; n < 4; n++){
+              //Make sure the square in on the map
+              if(x + this.neighbors[n][0] >= 0 && y + this.neighbors[n][1] >=0 && x + this.neighbors[n][0] <= gridWidth && y + this.neighbors[n][1] <= gridHeight){
+                //Make sure the location is a valid target (not null)
+                if(this.pathingGrid[x + this.neighbors[n][0]][y + this.neighbors[n][1]] === -1){
+                  if(enemyPositions[enemy][0] == x + this.neighbors[n][0] && enemyPositions[enemy][1] == y + this.neighbors[n][1]){
+                    //console.log((this.itterator + 2) + " moves away!");
+                    enemyPositions[enemy][0] -= this.neighbors[n][0];
+                    enemyPositions[enemy][1] -= this.neighbors[n][1];
+                  }
+                  this.tempGrid[x + this.neighbors[n][0]][y + this.neighbors[n][1]] = this.itterator + 2;
+                  this.continueLoop = true;
+                }
+              }
+            }
+          }
+        }
+      }
+      this.pathingGrid = this.tempGrid;
+      this.tempGrid = [];
+      this.itterator++;
+    }while(continueLoop);
+
+  }
+
+  //console.log(pathingGrid[1][1]);
+
+  console.log(pathingGrid[enemyPositions[enemy][0]][enemyPositions[enemy][1]]);
+
 
 }//end moveEnemyTowardsTarget()
 
@@ -730,13 +817,13 @@ function drawEnemies(){
 
   for(let x = 0; x < enemyPositions.length; x++){
     if(enemyPositions[x] != null){
-      //if(isEnemyVisible(x)){
+      if(isEnemyVisible(x)){
         ctx.beginPath();
         ctx.arc(enemyPositions[x][0]*squareSize+borderSize-(squareSize/2), enemyPositions[x][1]*squareSize+borderSize-(squareSize/2), 4, 0, 2 * Math.PI);
         ctx.lineWidth = (squareSize * 0.4);
         ctx.stroke();
         ctx.fill();
-      //}
+      }
     }
   }
 
@@ -849,7 +936,7 @@ function keyboardEvent(e) {
 
     console.log(this.validInput);
 
-    if(validInput){
+    if(validInput && !stopGame){
       totalMoves++;
     }
 

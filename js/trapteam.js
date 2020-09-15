@@ -396,22 +396,60 @@ function shineLight(){
 function drawGUI(){
   ctx.save();
 
-  ctx.font = "25px Arial";
+  ctx.font = "20px Arial";
 
-  ctx.fillStyle = "#4488ff";
+  ctx.fillStyle = "#bbb";
 
   //Top
   ctx.fillText("Moves: " + totalMoves, borderSize, 30);
   ctx.fillText("Captures: " + totalCaptures, canvasWidth - 160 -(String(totalCaptures).length*12), 30);
 
   //Bottom
-  ctx.fillText("Catch me. ", 350, canvasHeight - 10);
-  ctx.fillStyle = "#cd5100";
-  ctx.fillText("W, A, S, D", borderSize, canvasHeight - 10);
-  ctx.fillStyle = "#5a0061";
-  ctx.fillText("Arrow keys.", canvasWidth-170, canvasHeight - 10);
-  ctx.restore();
+  ctx.fillText("W, A, S, D", borderSize + 40, canvasHeight - 13);
+  ctx.fillText("Avoid me.", 400, canvasHeight - 13);
+  ctx.fillText("Arrow keys.", canvasWidth-145, canvasHeight - 13);
 
+
+  this.colors = ["white", "black", "white"];//, "white"];
+  this.playerTokenPositions = [[60, 875], [735, 875]];
+  this.enemyTokenPositions = [[385, 880], [500, 880]];
+
+
+  for(let x = 0; x < 2; x++){
+
+    //draw player tokens on gui
+    ctx.fillStyle = this.colors[0+x];
+    ctx.beginPath();
+    ctx.arc(this.playerTokenPositions[x][0], this.playerTokenPositions[x][1], 7, 0, 2 * Math.PI);
+    ctx.lineWidth = (squareSize * 0.4);
+    ctx.fill();
+
+    ctx.fillStyle = this.colors[1+x];
+    ctx.beginPath();
+    ctx.moveTo(playerTokenPositions[x][0]-5, playerTokenPositions[x][1]);
+    ctx.lineTo(playerTokenPositions[x][0], playerTokenPositions[x][1]-5);
+    ctx.lineTo(playerTokenPositions[x][0]+5, playerTokenPositions[x][1]);
+    ctx.lineTo(playerTokenPositions[x][0], playerTokenPositions[x][1]+5);
+    ctx.fill();
+
+    //Draw enemy tokens on gui
+    ctx.strokeStyle = "black";
+    ctx.fillStyle = "white";
+
+    ctx.beginPath();
+    ctx.moveTo(enemyTokenPositions[x][0]-2, enemyTokenPositions[x]  [1]+2);
+    ctx.lineTo(enemyTokenPositions[x][0], enemyTokenPositions[x][1]-2);
+    ctx.lineTo(enemyTokenPositions[x][0]+2, enemyTokenPositions[x][1]+2);
+    ctx.lineTo(enemyTokenPositions[x][0]-2, enemyTokenPositions[x][1]+2);
+    ctx.lineTo(enemyTokenPositions[x][0], enemyTokenPositions[x][1]-2);
+
+    ctx.lineWidth = (squareSize * 0.4);
+    ctx.stroke();
+    ctx.fill();
+
+  }
+
+  ctx.restore();
 }//end drawGUI()
 
 ///////////////////////////////////////////////////////////////////////////////\
@@ -815,11 +853,20 @@ function drawEnemies(){
   ctx.strokeStyle = "black";
   ctx.fillStyle = "white";
 
+  //ctx.fillStyle = "red";
+
   for(let x = 0; x < enemyPositions.length; x++){
     if(enemyPositions[x] != null){
       if(isEnemyVisible(x)){
+
+        this.baseLocation = [enemyPositions[x][0]*squareSize+borderSize-(squareSize/2), enemyPositions[x][1]*squareSize+borderSize-(squareSize/2)+2];
         ctx.beginPath();
-        ctx.arc(enemyPositions[x][0]*squareSize+borderSize-(squareSize/2), enemyPositions[x][1]*squareSize+borderSize-(squareSize/2), 4, 0, 2 * Math.PI);
+        ctx.moveTo(baseLocation[0]-2, baseLocation[1]+2);
+        ctx.lineTo(baseLocation[0], baseLocation[1]-2);
+        ctx.lineTo(baseLocation[0]+2, baseLocation[1]+2);
+        ctx.lineTo(baseLocation[0]-2, baseLocation[1]+2);
+        ctx.lineTo(baseLocation[0], baseLocation[1]-2);
+
         ctx.lineWidth = (squareSize * 0.4);
         ctx.stroke();
         ctx.fill();
@@ -838,21 +885,25 @@ function drawEnemies(){
 ///////////////////////////////////////////////////////////////////////////////\
 function drawPlayerTokens(){
 
+  this.colors = ["white", "black", "white"];//, "white"];
+
   for(let x = 0; x < playerPositions.length; x++){
-    ctx.strokeStyle = "white";
-    ctx.fillStyle = "#black";
+    this.baseLocation = [playerPositions[x][0]*squareSize+borderSize-(squareSize/2), playerPositions[x][1]*squareSize+borderSize-(squareSize/2)];
+    ctx.fillStyle = this.colors[0+x];
     ctx.beginPath();
-    ctx.arc(playerPositions[x][0]*squareSize+borderSize-(squareSize/2), playerPositions[x][1]*squareSize+borderSize-(squareSize/2), 4, 0, 2 * Math.PI);
+    ctx.arc(this.baseLocation[0], this.baseLocation[1], 7, 0, 2 * Math.PI);
     ctx.lineWidth = (squareSize * 0.4);
-    ctx.stroke();
     ctx.fill();
-    /*
+
+    ctx.fillStyle = this.colors[1+x];
+
     ctx.beginPath();
-    ctx.moveTo(75, 50);
-    ctx.lineTo(100, 75);
-    ctx.lineTo(100, 25);
+    ctx.moveTo(baseLocation[0]-5, baseLocation[1]);
+    ctx.lineTo(baseLocation[0], baseLocation[1]-5);
+    ctx.lineTo(baseLocation[0]+5, baseLocation[1]);
+    ctx.lineTo(baseLocation[0], baseLocation[1]+5);
     ctx.fill();
-    */
+
   }
 
 }//end drawPlayerTokens()

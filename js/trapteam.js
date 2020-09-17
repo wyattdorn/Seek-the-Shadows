@@ -9,6 +9,8 @@ const squareSize = 16;
 
 const borderSize = 40;
 
+const numLevels = 5;
+
 const gridWidth = (canvasWidth - 80) / squareSize;
 const gridHeight = (canvasHeight - 80) / squareSize;
 
@@ -28,6 +30,8 @@ let timer;
 
 let stopGame;
 
+let obstacleSets;
+
 
 
 //Variables for the canvas and canvas context used in game
@@ -42,6 +46,14 @@ function init(){
   obstacles = [];
   enemyPositions = [];
   enemyGrids = [];
+
+  obstacleSets = [];
+
+  obstacleSets[0] = [];
+  obstacleSets[1] = [ [3,3], [5,5], [7,7], [9,9],
+                      [49,3], [47,5], [45,7], [43,9],
+                      [3,49], [5,47], [7,45], [9,43],
+                      [49,49], [47,47], [45,45], [43,43]];
 
   clickedToken = clickedObstacle = -1;
 
@@ -76,6 +88,24 @@ function init(){
 } //end init()
 
 
+///////////////////////////////////////////////////////////////////////////////\
+// Loads a preset series of obstacles
+///////////////////////////////////////////////////////////////////////////////\
+function loadObstacleSet(setNum){
+
+  //Cleaar any preexisting obstacles
+  obstacles = [];
+
+  for(let x = 0; x < obstacleSets[setNum].length; x++){
+    obstacles.push([0, obstacleSets[setNum][x][0], obstacleSets[setNum][x][1]]);
+  }
+
+}//end loadObstacleSet()
+
+
+///////////////////////////////////////////////////////////////////////////////\
+// Run function to start new game
+///////////////////////////////////////////////////////////////////////////////\
 function beginGame(){
   console.log("BEGUN!");
 
@@ -83,8 +113,10 @@ function beginGame(){
     addRemoveEnemyToken(x);
   }
 
-  playerPositions.push([19,19]);
-  playerPositions.push([23,23]);
+  playerPositions.push([25,26]);
+  playerPositions.push([26,25]);
+
+  loadObstacleSet(0);
 
   timer = setInterval(myTimer, 1000);
 
@@ -391,6 +423,19 @@ function shineLight(){
 }//end shineLight()
 
 ///////////////////////////////////////////////////////////////////////////////\
+// Draws buttons for loading different levels
+///////////////////////////////////////////////////////////////////////////////\
+function drawButtons(){
+  for(let x = 0; x < numLevels; x++){
+    console.log(x);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(borderSize/10, borderSize + (x*borderSize), borderSize * 0.8, borderSize * 0.8);
+    ctx.fillStyle = "white";
+    ctx.fillText(x, borderSize/3, 5*borderSize/3 + (x*borderSize));
+  }
+}//end drawButtons()
+
+///////////////////////////////////////////////////////////////////////////////\
 // Draws the text to the top and bottom of the screen
 ///////////////////////////////////////////////////////////////////////////////\
 function drawGUI(){
@@ -448,6 +493,8 @@ function drawGUI(){
     ctx.fill();
 
   }
+
+  drawButtons();
 
   ctx.restore();
 }//end drawGUI()

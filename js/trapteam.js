@@ -9,12 +9,12 @@ const squareSize = 16;
 
 const borderSize = 40;
 
-const numLevels = 5;
+const numLevels = 10;
 
 const gridWidth = (canvasWidth - 80) / squareSize;
 const gridHeight = (canvasHeight - 80) / squareSize;
 
-const initialPositions = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+let initialPositions;
 
 let enemyPositions, playerPositions;
 
@@ -24,7 +24,7 @@ let obstacles;
 
 let clickedToken, clickedObstacle;
 
-let totalMoves, totalCaptures;
+let totalMoves, totalScore;
 
 let timer;
 
@@ -32,7 +32,7 @@ let stopGame;
 
 let obstacleSets;
 
-
+let currentLevel, levelScores;
 
 //Variables for the canvas and canvas context used in game
 let canvas, ctx;
@@ -42,26 +42,28 @@ function init(){
   //Add event listener for key presses
   window.addEventListener('keydown',this.keyboardEvent,false);
 
+  initialPositions = [];
   playerPositions = [];
   obstacles = [];
   enemyPositions = [];
   enemyGrids = [];
 
   obstacleSets = [];
+  levelScores = [];
 
-  obstacleSets[0] = [];
-  obstacleSets[1] = [ [3,3], [5,5], [7,7], [9,9],
-                      [49,3], [47,5], [45,7], [43,9],
-                      [3,49], [5,47], [7,45], [9,43],
-                      [49,49], [47,47], [45,45], [43,43]];
+  for(let x = 0; x < numLevels; x++){
+    levelScores[x] = 0;
+  }
 
   clickedToken = clickedObstacle = -1;
 
-  totalMoves = totalCaptures = 0;
+  totalMoves = 0;
 
   numEnemyTokens = 0;
 
   stopGame = false;
+
+  currentLevel = 0;
 
   canvas = document.getElementById('canvas');
   canvas.style.left = "0px";
@@ -82,10 +84,69 @@ function init(){
     return false;
   }
 
+  setObstacles();
   beginGame();
   refresh();
 
 } //end init()
+
+///////////////////////////////////////////////////////////////////////////////\
+// Sets the initial value for obstacles
+///////////////////////////////////////////////////////////////////////////////\
+function setObstacles(){
+
+  console.log("Obstacles set!~");
+
+  initialPositions[0] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[1] = [[7,1], [gridWidth, 7], [7, gridHeight-1], [gridWidth-7, gridHeight]];
+  initialPositions[2] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[3] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[4] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[5] = [[1,1], [gridWidth, 1], [11, 1], [gridWidth-10, 1]];
+  initialPositions[6] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[7] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[8] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+  initialPositions[9] = [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+
+  obstacleSets[0] = [];
+  obstacleSets[1] = [ [3,3], [5,5], [7,7], [9,9],
+                      [49,3], [47,5], [45,7], [43,9],
+                      [3,49], [5,47], [7,45], [9,43],
+                      [49,49], [47,47], [45,45], [43,43]];
+
+  obstacleSets[2] = [ [29,23], [21,31], [31,21], [23,29],
+                      [23,23], [25,25], [27,27], [29,29]];
+
+  obstacleSets[3] = [ [21,20], [23,20], [25,20], [29,20], [31,20],
+                      [32,21], [32,23], [32,25], [32,29], [32,31],
+                      [21,32], [23,32], [27,32], [29,32], [31,32],
+                      [20,21], [20,23], [20,27], [20,29], [20,31]];
+  obstacleSets[4] = [ [33,4], [35,4], [37,4], [39,4], [41,4], [43,4], [45,4], [47,4], [49,4], [51,4],
+                      [4,1], [4,3], [4,5], [4,7], [4,9], [4,11], [4,13], [4,15], [4,17], [4,19],
+                      [1,48], [3,48], [5,48], [7,48], [9,48], [11,48], [13,48], [15,48], [17,48], [19,48],
+                      [48,33], [48,35], [48,37], [48,39], [48,41], [48,43], [48,45], [48,47], [48,49], [48,51]];
+  obstacleSets[5] = [ [15, 12], [17, 12], [19, 12], [21, 12], [23, 12], [29, 12], [31, 12], [33, 12], [35, 12], [37, 12],
+                      [24, 13], [24, 15], [24, 17], [24, 19], [24, 21], [24, 23], [24, 25], [24, 27], [24, 29], [24, 31], [24, 33], [24, 35], [24, 37], [24, 39],
+                      [28, 13], [28, 15], [28, 17], [28, 19], [28, 21], [28, 23], [28, 25], [28, 27], [28, 29], [28, 31], [28, 33], [28, 35], [28, 37], [28, 39]];
+  obstacleSets[6] = [];
+  obstacleSets[7] = [];
+  obstacleSets[8] = [];
+  obstacleSets[9] = [];
+
+}//end setObstacles()
+
+///////////////////////////////////////////////////////////////////////////////\
+// Adds up the player's total score at this moment
+///////////////////////////////////////////////////////////////////////////////\
+function updateTotalScore(){
+
+  totalScore = 0;
+
+  for(let x = 0; x < numLevels; x++){
+    totalScore += levelScores[x];
+  }
+
+}//end updateTotalScore()
 
 
 ///////////////////////////////////////////////////////////////////////////////\
@@ -109,18 +170,45 @@ function loadObstacleSet(setNum){
 function beginGame(){
   console.log("BEGUN!");
 
+  /*
+  console.log("There are: " + numEnemyTokens + " enemies.");
   for(let x = 0; x < 4; x++){
     addRemoveEnemyToken(x);
   }
+  */
+  resetAllEnemies();
 
-  playerPositions.push([25,26]);
-  playerPositions.push([26,25]);
+  playerPositions[0] = ([25,27]);
+  playerPositions[1] = ([27,25]);
 
-  loadObstacleSet(0);
+  loadObstacleSet(currentLevel);
 
   timer = setInterval(myTimer, 1000);
 
 }//end beginGame()
+
+
+///////////////////////////////////////////////////////////////////////////////\
+//  Loads a level based on keyboard input
+///////////////////////////////////////////////////////////////////////////////\
+function loadLevel(level) {
+
+  console.log("loading new level: " + level);
+
+  levelScores[currentLevel] = totalMoves;
+  totalMoves = 0;
+
+  updateTotalScore();
+
+  //Set surrent level
+  currentLevel = level;
+
+  //Clear list of enemies
+  resetAllEnemies();
+
+  beginGame();
+
+}//end loadLevel()
 
 
 
@@ -154,6 +242,36 @@ function addRemoveEnemyToken(index){
   }
 
 }//end addRemoveEnemyToken()
+
+///////////////////////////////////////////////////////////////////////////////\
+// Adds or removes a given enemy token based on a given index
+///////////////////////////////////////////////////////////////////////////////\
+function resetAllEnemies(){
+
+
+  for(let x = 0; x < 4; x++){
+    enemyPositions[x] = initialPositions[currentLevel][x];
+  }
+
+  //enemyPositions = initialPositions[currentLevel];// [[2,1], [gridWidth, 2], [1, gridHeight-1], [gridWidth-1, gridHeight]];
+
+  /*
+  if(enemyPositions[index] == null){
+    enemyPositions[index] = initialPositions[index];
+    numEnemyTokens++;
+  }
+  else{
+    if(numEnemyTokens > 1){
+      enemyPositions[index] = null;
+      numEnemyTokens--;
+    }
+    else{
+      console.log("Cannot have 0 enemy tokens!");
+    }
+  }
+  */
+
+}//end resetAllEnemies()
 
 
 function movetoken(e){
@@ -426,13 +544,27 @@ function shineLight(){
 // Draws buttons for loading different levels
 ///////////////////////////////////////////////////////////////////////////////\
 function drawButtons(){
+  ctx.save();
+
   for(let x = 0; x < numLevels; x++){
-    console.log(x);
-    ctx.fillStyle = "#111";
-    ctx.fillRect(borderSize/10, borderSize + (x*borderSize), borderSize * 0.8, borderSize * 0.8);
+    ctx.font = "20px Arial";
+    if(currentLevel === x){
+      ctx.fillStyle = "white";
+      ctx.fillRect(borderSize/10, borderSize + (1.5 * x * borderSize), borderSize * 0.8, borderSize * 0.8);
+      ctx.fillStyle = "#111";
+      ctx.fillText(x, borderSize/3, borderSize * (8/5 + (x*1.5)));
+    }
+    else{
+      ctx.fillStyle = "#111";
+      ctx.fillRect(borderSize/10, borderSize + (1.5 * x * borderSize), borderSize * 0.8, borderSize * 0.8);
+      ctx.fillStyle = "white";
+      ctx.fillText(x, borderSize/3, borderSize * (8/5 + (x*1.5)));
+    }
+    ctx.font = "12px Arial";
     ctx.fillStyle = "white";
-    ctx.fillText(x, borderSize/3, 5*borderSize/3 + (x*borderSize));
+    ctx.fillText(levelScores[x], borderSize/3, borderSize * (11/5 + (x*1.5)));
   }
+  ctx.restore();
 }//end drawButtons()
 
 ///////////////////////////////////////////////////////////////////////////////\
@@ -447,7 +579,7 @@ function drawGUI(){
 
   //Top
   ctx.fillText("Moves: " + totalMoves, borderSize, 30);
-  ctx.fillText("Captures: " + totalCaptures, canvasWidth - 160 -(String(totalCaptures).length*12), 30);
+  ctx.fillText("Total: " + totalScore, canvasWidth - 90 -(String(totalScore).length*12), 30);
 
   //Bottom
   ctx.fillText("W, A, S, D", borderSize + 40, canvasHeight - 13);
@@ -608,58 +740,49 @@ function checkForCaptures(){
 ///////////////////////////////////////////////////////////////////////////////\
 function refresh(){
 
-  console.log(stopGame + " is a go!");
+  ctx.fillStyle = "#202020";
+  ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  drawMaze();
+  drawGUI();
+  calculateThreats();
+  shineLight();
+  drawPlayerTokens();
+  drawObstacles();
+  drawEnemies();
+
+  for(let x = 0; x < enemyPositions.length; x++){
+    ctx.fillStyle = "red";
+    ctx.fillText(getClosestTarget(x), enemyPositions[x][0]*16+32,enemyPositions[x][1]*16+27);
+    moveEnemyTowardsTarget(x);
+  }
+
+  stopGame = checkForCaptures();
 
   if(stopGame){
-    console.log("game over!");
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "55px Arial";
-
-    ctx.fillText("GAME OVER! Score: " + totalMoves, 100, 400 );
-  }
-  else{
-
-    ctx.fillStyle = "#202020";
-    ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-    drawMaze();
-
-    drawGUI();
-
-    calculateThreats();
-
-    shineLight();
-
-    drawPlayerTokens();
-
-    drawObstacles();
-
-    for(let x = 0; x < enemyPositions.length; x++){
-      //ctx.fillStyle = "red";
-      //ctx.fillText(getClosestTarget(x), enemyPositions[x][0]*16+32,enemyPositions[x][1]*16+27);
-      moveEnemyTowardsTarget(x);
+    if(currentLevel < 9){
+      loadLevel(currentLevel+1);
+      stopGame = false;
     }
+    else{
+      console.log("game over!");
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "55px Arial";
 
-    drawEnemies();
+      ctx.fillText("GAME OVER! Score: " + totalScore, 100, 400 );
+    }
+  }
 
-
-     //FOR TESTING PURPOSES
-
-
-    stopGame = checkForCaptures();
-    /*
-    for(let x = 1; x < 52; x++){
-      for(let y = 1; y < 52; y++){
-        ctx.fillStyle = "green";
-        if((enemyGrids[0][x][y])!= null){
-          ctx.fillText((enemyGrids[0][x][y]), x*16+28, y*16+32);
-        }
+  /*
+  for(let x = 1; x < 52; x++){
+    for(let y = 1; y < 52; y++){
+      ctx.fillStyle = "green";
+      if((enemyGrids[0][x][y])!= null){
+        ctx.fillText((enemyGrids[0][x][y]), x*16+28, y*16+32);
       }
     }
-    */
   }
-
-
+  */
 
 }//end refresh()
 
@@ -971,6 +1094,7 @@ function drawMaze(){
 }//end drawMaze()
 
 
+
 ///////////////////////////////////////////////////////////////////////////////\
 //  Collects data every time a key is pressed
 ///////////////////////////////////////////////////////////////////////////////\
@@ -979,66 +1103,70 @@ function keyboardEvent(e) {
 
     this.validInput = false;
 
-    switch (code) {
-      case 87:
+    switch (true) {
+      case (code === 87):
         console.log("W");
         this.validInput = movePlayerToken(0, 'north');
         break;
-      case 83:
+      case (code === 83):
         console.log("S")
         this.validInput = movePlayerToken(0, 'south');
         break;
-      case 65:
+      case (code === 65):
         console.log("A")
         this.validInput = movePlayerToken(0, 'west');
         break;
-      case 68:
+      case (code === 68):
         console.log("D")
         this.validInput = movePlayerToken(0, 'east');
         break;
-      case 38:
+      case (code === 38):
         console.log("up");
         this.validInput = movePlayerToken(1, 'north');
         break;
-      case 40:
+      case (code === 40):
         console.log("down");
         this.validInput = movePlayerToken(1, 'south');
         break;
-      case 37:
+      case (code === 37):
         console.log("left");
         this.validInput = movePlayerToken(1, 'west');
         break;
-      case 39:
+      case (code === 39):
         console.log("right");
         this.validInput = movePlayerToken(1, 'east');
         break;
-      case 49:
-        console.log("1");
-        addRemoveEnemyToken(0);
-        break;
-      case 50:
-        console.log("2");
-        addRemoveEnemyToken(1);
-        break;
-      case 51:
-        console.log("3");
-        addRemoveEnemyToken(2);
-        break;
-      case 52:
-        console.log("4");
-        addRemoveEnemyToken(3);
+      case (code >= 48 && code <= 57):
+        //Keyboard inputs 0-9
+        loadLevel(code-48);
         break;
       default:
         console.log("Not a valid input!");
     }
 
-    console.log(this.validInput);
 
-    if(validInput && !stopGame){
-      totalMoves++;
+    if(validInput){
+      refresh();
     }
 
+    /*
+    //console.log(this.validInput);
+    if(stopGame){
+      console.log("Loadering");
+      resetAllEnemies();
+      refresh();
+      resetAllEnemies();
+    }
+    else if(validInput && !stopGame){
+      totalMoves++;
+      refresh();
+    }
+    else{
+      //we shouldn't get here
+      console.log("ERROR");
+    }
+    */
 
-    refresh();
+
 
 }//end keyboardEvent()
